@@ -4,7 +4,6 @@ import time
 import logging
 
 from queue import Queue
-from collections import deque
 
 from threading import Thread
 
@@ -45,27 +44,45 @@ class AudioSampleStreamer:
         self.CHUNK = CHUNK
         self.FORMAT = FORMAT
         self.CHANNELS = CHANNELS
+        self.length = int((RATE/CHUNK)*60)
         self.audio_queue = self.__init_audio_frames_que()
 
     def __init_audio_frames_que(self):
         return Queue()
 
-    def __trim_queue(self, length):
-        while self.audio_queue.qsize() > length:
+    def __trim_queue(self):
+        while self.audio_queue.qsize() > self.length:
             self.audio_queue.get()
 
-    def __init_audio_stream_to_queue(self):
-        p = pyaudio.PyAudio()
-        stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
+    def append_audio_stream_to_queue(self):
+        self.audio_port = pyaudio.PyAudio()
+        self.audio_stream = self.audio_port.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, frames_per_buffer=self.CHUNK, input=True)
 
-        return stream
+        try:
+            while True:
+                data = self.audio_stream.read(self.CHUNK)
+                self.audio_queue.put(data)
+                self.__trim_queue()
+
+        except Exception as e:
+            print("Exception reading the audio from audio port. ", e)
+            raise e
+
+        finally:
+            self.audio_stream.stop_stream()
+            self.audio_stream.close()
+            self.audio_port.terminate()
+
+    def write_audio_wave_file(self, name):
+        wf = wave.open(name, 'wb')
+        wf.setnchannels(self.CHANNELS)
+        wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
+        wf.setframerate(self.RATE)
+        wf.writeframes(b''.join(list(self.audio_queue.queue)))
+        wf.close()
 
 
-if __name__ == "__main__":
+if __name__ == "__mainw__":
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
@@ -88,7 +105,6 @@ if __name__ == "__main__":
     for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
         data = stream.read(CHUNK)
         frames.append(data)
-        print(data)
 
     print("* done recording")
 
