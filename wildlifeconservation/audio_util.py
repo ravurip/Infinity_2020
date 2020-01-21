@@ -48,13 +48,20 @@ class AudioSampleStreamer:
             self.audio_stream.close()
             self.audio_port.terminate()
 
-    def write_audio_wave_file(self, filename):
+    def write_audio_wave_file(self, filename, num_of_seconds):
+
+        num_of_frames = int((self.RATE/self.CHUNK)*num_of_seconds)
+        frames = list(self.audio_queue.queue)[-num_of_frames:]
+
         wf = wave.open(filename, 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
         wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(list(self.audio_queue.queue)))
+        wf.writeframes(b''.join(frames))
         wf.close()
+
+    def detect_activity(self):
+        pass
 
 
 class AudioSampleHandler(AudioSampleStreamer):
@@ -79,8 +86,8 @@ class AudioSampleHandler(AudioSampleStreamer):
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader")
 
-    def snip_audio_sample(self, filename):
-        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", filename=filename)
+    def snip_audio_sample(self, filename, seconds=60):
+        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", filename=filename, num_of_seconds=seconds)
 
 
 if __name__ == "__main__":
