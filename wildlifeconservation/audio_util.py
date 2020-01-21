@@ -10,33 +10,6 @@ from threading import Thread
 log = logging.getLogger("digitalhub")
 
 
-class SampleDispatcher:
-
-    def __init__(self, target, num_of_threads, **kwargs):
-        self.target = target
-        self.kwargs = kwargs
-        self.threads = self.run_threads(num_of_threads)
-        log.info(f"Created {num_of_threads} threads to post requests.")
-
-    def ensure_all_threads_closed(self):
-        log.info("In Progress")
-        while len([t for t in self.threads if t.is_alive()]) > 0:
-            time.sleep(1)
-        log.info("All threads terminated.")
-
-    def run_threads(self, num_of_threads):
-        threads = []
-
-        for i in range(num_of_threads):
-            thread = Thread(target=self.target, kwargs=self.kwargs)
-            threads.append(thread)
-            thread.start()
-            log.debug(f"Started thread {i}")
-            time.sleep(1.5 / num_of_threads)
-
-        return threads
-
-
 class AudioSampleStreamer:
 
     def __init__(self, CHUNK = 1024, FORMAT = pyaudio.paInt16, CHANNELS = 1, RATE = 44100):
@@ -46,6 +19,7 @@ class AudioSampleStreamer:
         self.CHANNELS = CHANNELS
         self.length = int((RATE/CHUNK)*60)
         self.audio_queue = self.__init_audio_frames_que()
+        log.info(f"Initialised Audio sample streamer.")
 
     def __init_audio_frames_que(self):
         return Queue()
@@ -59,6 +33,7 @@ class AudioSampleStreamer:
         self.audio_stream = self.audio_port.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, frames_per_buffer=self.CHUNK, input=True)
 
         try:
+            log.info("Audio samples streaming in.")
             while True:
                 data = self.audio_stream.read(self.CHUNK)
                 self.audio_queue.put(data)
@@ -73,8 +48,8 @@ class AudioSampleStreamer:
             self.audio_stream.close()
             self.audio_port.terminate()
 
-    def write_audio_wave_file(self, name):
-        wf = wave.open(name, 'wb')
+    def write_audio_wave_file(self, filename):
+        wf = wave.open(filename, 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
         wf.setframerate(self.RATE)
@@ -82,39 +57,31 @@ class AudioSampleStreamer:
         wf.close()
 
 
-if __name__ == "__mainw__":
-    CHUNK = 1024
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 44100
-    RECORD_SECONDS = 30
-    WAVE_OUTPUT_FILENAME = "output.wav"
+class AudioSampleHandler(AudioSampleStreamer):
 
-    p = pyaudio.PyAudio()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.threads = []
+        self.init_audio_stream_collection()
 
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
+    def ensure_all_threads_closed(self):
+        log.info("In Progress")
+        while len([t for t in self.threads if t.is_alive()]) > 0:
+            time.sleep(1)
+        log.info("All threads terminated.")
 
-    print("* recording")
+    def run_threads(self, target, name, **kwargs):
+        thread = Thread(target=target, name=name, kwargs=kwargs)
+        self.threads.append(thread)
+        thread.start()
+        log.debug(f"Started thread {name}")
 
-    frames = []
+    def init_audio_stream_collection(self):
+        self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader")
 
-    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-        data = stream.read(CHUNK)
-        frames.append(data)
+    def snip_audio_sample(self, filename):
+        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", filename=filename)
 
-    print("* done recording")
 
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(p.get_sample_size(FORMAT))
-    wf.setframerate(RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
+if __name__ == "__main__":
+    pass
