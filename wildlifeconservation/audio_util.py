@@ -91,4 +91,4 @@ class AudioSampleHandler(AudioSampleStreamer):
 
 
 if __name__ == "__main__":
-    pass
+    audio_handler = AudioSampleHandler(CHUNK=256)
