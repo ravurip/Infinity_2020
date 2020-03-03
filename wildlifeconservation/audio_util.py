@@ -12,12 +12,12 @@ log = logging.getLogger("digitalhub")
 
 class AudioSampleStreamer:
 
-    def __init__(self, CHUNK = 1024, FORMAT = pyaudio.paInt16, CHANNELS = 1, RATE = 44100):
+    def __init__(self, CHUNK=1024, FORMAT=pyaudio.paInt16, CHANNELS=1, RATE=44100):
         self.RATE = RATE
         self.CHUNK = CHUNK
         self.FORMAT = FORMAT
         self.CHANNELS = CHANNELS
-        self.length = int((RATE/CHUNK)*60)
+        self.length = int((RATE / CHUNK) * 60)
         self.audio_queue = self.__init_audio_frames_que()
         log.info(f"Initialised Audio sample streamer.")
 
@@ -35,7 +35,7 @@ class AudioSampleStreamer:
         try:
             log.info("Audio samples streaming in.")
             while True:
-                data = self.audio_stream.read(self.CHUNK)
+                data = self.audio_stream.read(self.CHUNK, exception_on_overflow=False)
                 self.audio_queue.put(data)
                 self.__trim_queue()
 
