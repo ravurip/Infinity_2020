@@ -77,8 +77,8 @@ class AudioSampleHandler(AudioSampleStreamer):
             time.sleep(1)
         log.info("All threads terminated.")
 
-    def run_threads(self, target, name, **kwargs):
-        thread = Thread(target=target, name=name, kwargs=kwargs)
+    def run_threads(self, target, name, daemon, **kwargs):
+        thread = Thread(target=target, name=name, kwargs=kwargs, daemon=daemon)
         self.threads.append(thread)
         thread.start()
         log.debug(f"Started thread {name}")
@@ -87,7 +87,7 @@ class AudioSampleHandler(AudioSampleStreamer):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
     def snip_audio_sample(self, filename, seconds=45):
-        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", filename=filename, num_of_seconds=seconds)
+        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=seconds)
 
 
 if __name__ == "__main__":
