@@ -12,7 +12,7 @@ log = logging.getLogger("digitalhub")
 
 class AudioSampleStreamer:
 
-    def __init__(self, CHUNK=1024, FORMAT=pyaudio.paInt16, CHANNELS=1, RATE=44100):
+    def __init__(self, CHUNK=4096, FORMAT=pyaudio.paInt16, CHANNELS=1, RATE=44100):
         self.RATE = RATE
         self.CHUNK = CHUNK
         self.FORMAT = FORMAT
@@ -84,11 +84,11 @@ class AudioSampleHandler(AudioSampleStreamer):
         log.debug(f"Started thread {name}")
 
     def init_audio_stream_collection(self):
-        self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader")
+        self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
-    def snip_audio_sample(self, filename, seconds=60):
+    def snip_audio_sample(self, filename, seconds=45):
         self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", filename=filename, num_of_seconds=seconds)
 
 
 if __name__ == "__main__":
-    audio_handler = AudioSampleHandler(CHUNK=256)
+    audio_handler = AudioSampleHandler()
