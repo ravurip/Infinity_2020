@@ -53,7 +53,7 @@ class AudioSampleStreamer:
         num_of_frames = int((self.RATE/self.CHUNK)*num_of_seconds)
         frames = list(self.audio_queue.queue)[-num_of_frames:]
 
-        wf = wave.open(filename, 'wb')
+        wf = wave.open(filename + ".wav", 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
         wf.setframerate(self.RATE)
@@ -92,3 +92,6 @@ class AudioSampleHandler(AudioSampleStreamer):
 
 if __name__ == "__main__":
     audio_handler = AudioSampleHandler()
+    while True:
+        interrupt = int(input("Enter any int"))
+        audio_handler.snip_audio_sample(f"hello_{interrupt}", interrupt)
