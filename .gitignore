@@ -1,6 +1,7 @@
 #IDE
 .idea
 *.iml
+*.zip
 
 *.wav
 # Byte-compiled / optimized / DLL files
