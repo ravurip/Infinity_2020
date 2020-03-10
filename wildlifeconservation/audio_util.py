@@ -9,9 +9,10 @@ from threading import Thread
 
 log = logging.getLogger("aranyani")
 
+
 class AudioSampleStreamer:
 
-    def __init__(self, CHUNK=64, FORMAT=pyaudio.paInt16, CHANNELS=1, RATE=48000, TO_CACHE=1800):
+    def __init__(self, CHUNK=128, FORMAT=pyaudio.paInt16, CHANNELS=1, RATE=48000, TO_CACHE=1500):
         self.RATE = RATE
         self.CHUNK = CHUNK
         self.FORMAT = FORMAT
@@ -23,18 +24,21 @@ class AudioSampleStreamer:
         log.info(f"Initialised Audio sample streamer with a sampling rate of {RATE} and the chunk size is {CHUNK}")
 
     def trim_queue(self):
-        while self.audio_queue.qsize() > self.length:
-            self.audio_queue.get()
+        while True:
+            print(str(self.audio_queue.qsize() > self.length))
+            if self.audio_queue.qsize() > self.length:
+                self.audio_queue.get()
 
     def append_audio_stream_to_queue(self):
         try:
-            log.info(f"Audio samples streaming in. Buffer width is {str(self.CHUNK/self.RATE)} seconds")
+            log.info(f"Audio samples streaming in. Buffer width is {str(self.CHUNK / self.RATE)} seconds")
             while True:
                 data = self.audio_stream.read(self.CHUNK, exception_on_overflow=False)
                 self.audio_queue.put(data)
 
-        except OSError:
+        except OSError as e:
             log.warning("Audio stream or Audio port cosed. Stopping Application")
+            raise e
 
         except Exception as e:
             print("Exception reading the audio from audio port. ", e)
@@ -52,7 +56,7 @@ class AudioSampleStreamer:
 
     def write_audio_wave_file(self, filename, num_of_seconds):
 
-        num_of_frames = int((self.RATE/self.CHUNK)*num_of_seconds)
+        num_of_frames = int((self.RATE / self.CHUNK) * num_of_seconds)
         frames = list(self.audio_queue.queue)[-num_of_frames:]
 
         wf = wave.open(filename + ".wav", 'wb')
@@ -90,7 +94,7 @@ class AudioSampleHandler(AudioSampleStreamer):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
     def init_audio_stream_truncate(self):
-        self.run_threads(target=self.trim_queue, name="audio_stream_", daemon=True)
+        self.run_threads(target=self.trim_queue, name="audio_queue_truncate", daemon=True)
 
     def snip_audio_sample(self, filename, seconds=45):
         self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=seconds)
@@ -101,7 +105,7 @@ if __name__ == "__main__":
         audio_handler = AudioSampleHandler()
         while True:
             try:
-                interrupt = int(input("Enter any int"))
+                interrupt = int(input("Enter any int value"))
                 audio_handler.snip_audio_sample(f"hello_{interrupt}", interrupt)
             except NameError as e:
                 log.warning("Invalid value entered")
