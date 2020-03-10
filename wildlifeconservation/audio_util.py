@@ -3,7 +3,7 @@ import wave
 import time
 import logging
 
-from queue import Queue
+from collections import deque
 
 from threading import Thread
 
@@ -18,23 +18,17 @@ class AudioSampleStreamer:
         self.FORMAT = FORMAT
         self.CHANNELS = CHANNELS
         self.length = int((RATE / CHUNK) * TO_CACHE)
-        self.audio_queue = Queue()
+        self.audio_queue = deque(maxlen=self.length)
         self.audio_port = pyaudio.PyAudio()
         self.audio_stream = self.audio_port.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, frames_per_buffer=self.CHUNK, input=True)
         log.info(f"Initialised Audio sample streamer with a sampling rate of {RATE} and the chunk size is {CHUNK}")
-
-    def trim_queue(self):
-        while True:
-            print(str(self.audio_queue.qsize() > self.length))
-            if self.audio_queue.qsize() > self.length:
-                self.audio_queue.get()
 
     def append_audio_stream_to_queue(self):
         try:
             log.info(f"Audio samples streaming in. Buffer width is {str(self.CHUNK / self.RATE)} seconds")
             while True:
                 data = self.audio_stream.read(self.CHUNK, exception_on_overflow=False)
-                self.audio_queue.put(data)
+                self.audio_queue.append(data)
 
         except OSError as e:
             log.warning("Audio stream or Audio port cosed. Stopping Application")
@@ -57,7 +51,7 @@ class AudioSampleStreamer:
     def write_audio_wave_file(self, filename, num_of_seconds):
 
         num_of_frames = int((self.RATE / self.CHUNK) * num_of_seconds)
-        frames = list(self.audio_queue.queue)[-num_of_frames:]
+        frames = list(self.audio_queue)[-num_of_frames:]
 
         wf = wave.open(filename + ".wav", 'wb')
         wf.setnchannels(self.CHANNELS)
@@ -76,7 +70,6 @@ class AudioSampleHandler(AudioSampleStreamer):
         super().__init__(**kwargs)
         self.threads = []
         self.init_audio_stream_collection()
-        self.init_audio_stream_truncate()
 
     def ensure_all_threads_closed(self):
         log.info("In Progress")
@@ -92,9 +85,6 @@ class AudioSampleHandler(AudioSampleStreamer):
 
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
-
-    def init_audio_stream_truncate(self):
-        self.run_threads(target=self.trim_queue, name="audio_queue_truncate", daemon=True)
 
     def snip_audio_sample(self, filename, seconds=45):
         self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=seconds)
