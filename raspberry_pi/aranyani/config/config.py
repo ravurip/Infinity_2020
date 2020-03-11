@@ -12,7 +12,13 @@ def get_current_date():
     return datetime.now().strftime("%Y/%m/%d")
 
 
+def get_rest_endpoint(zone: str = "none"):
+    return "https://ohpq8lw7m4.execute-api.ap-south-1.amazonaws.com/Dev"
+
+
 AUDIO_SAMPLE_RECORD = {'CHUNK': 128, 'RATE': 48000, 'TO_CACHE': 1500}
+
+rest_endpoint = get_rest_endpoint()
 
 aranyani_home_dir = get_home_directory()
 
