@@ -22,3 +22,9 @@ sudo ldconfig
 
 # Setting audio output to headset port. 1- headset port, 2- HDMI
 amixer cset numid=3 1
+
+export ARANYANI_HOME=/home/pi/aranyani
+
+mkdir -p $ARANYANI_HOME/data
+mkdir -p $ARANYANI_HOME/logs
+mkdir -p $ARANYANI_HOME/temp

@@ -8,7 +8,3 @@ def lambda_handler(event, context):
         'body': json.dumps('Hello from Lambda!'),
         'msg':event['key1']
     }
-
-
-import requests
-requests.post()
