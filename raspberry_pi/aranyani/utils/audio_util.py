@@ -53,7 +53,7 @@ class AudioSampleStreamer:
         num_of_frames = int((self.RATE / self.CHUNK) * num_of_seconds)
         frames = list(self.audio_queue)[-num_of_frames:]
 
-        wf = wave.open(filename + ".wav", 'wb')
+        wf = wave.open(filename, 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
         wf.setframerate(self.RATE)
@@ -86,11 +86,11 @@ class AudioSampleHandler(AudioSampleStreamer):
                 audio_bytes_data = audio_wav.read()
 
             audio_b64_bytes = b64encode(audio_bytes_data)
-            return audio_b64_bytes.decode("utf-8")
+            return True, audio_b64_bytes.decode("utf-8")
 
         except Exception as exception:
-            log.error(f"Unable to convert {filename} audio file to string format.")
-            return None
+            log.error(f"Unable to convert {filename} audio file to string format.", exception)
+            return False, str(exception)
 
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
@@ -104,14 +104,7 @@ class AudioSampleHandler(AudioSampleStreamer):
     def prepare_audio_snip_for_message(self, audio_sample_location: str):
 
         message = {'filename': audio_sample_location.split("/")[-1]}
-
-        audio_data = self.convert_audio_sample_bytes_to_string(audio_sample_location)
-
-        if audio_data is not None:
-            message['audio_data'] = audio_data
-            message['audio_encoded'] = True
-        else:
-            message['audio_encoded'] = False
+        message['audio_encoded'], message['audio_data'] = self.convert_audio_sample_bytes_to_string(audio_sample_location)
 
         return message
 

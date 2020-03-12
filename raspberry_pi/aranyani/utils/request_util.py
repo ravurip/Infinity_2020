@@ -5,6 +5,7 @@ from base64 import b64encode
 from aranyani.config.config import rest_endpoint
 from aranyani.config.logger import log
 
+from pprint import pprint
 
 class Communicator:
 
@@ -19,6 +20,7 @@ class Communicator:
     def __send_request(self, message):
         try:
             json_message = self.__convert_python_dict_to_json(message)
+            pprint(json_message)
             return requests.post(self.rest_endpoint, json=json_message)
 
         except Exception as exc:
