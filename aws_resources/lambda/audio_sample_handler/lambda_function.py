@@ -12,13 +12,14 @@ def lambda_handler(event, context):
     audio_encoded = audio_data['audio_encoded']
 
     if audio_encoded:
-        audio_string_content = bytes(audio_data['audio_data']).decode("utf-8")
+        audio_string_content = audio_data['audio_data']
+        audio_b64 = audio_string_content.encode("utf-8")
         s3_filekey = f'infinity/aranyani/{filename}'
 
         s3 = boto3.resource('s3')
         object = s3.Object('gupthas-garage', s3_filekey)
 
-        audio_binary_data = b64decode(audio_string_content)
+        audio_binary_data = b64decode(audio_b64)
 
         object.put(Body=audio_binary_data)
 
