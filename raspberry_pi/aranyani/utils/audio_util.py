@@ -3,10 +3,11 @@ import wave
 import time
 
 from collections import deque
-
+from base64 import b64encode
 from threading import Thread
 
 from aranyani import log
+from aranyani.config.config import application_data_dir, get_current_timestamp, HOSTNAME
 
 
 class AudioSampleStreamer:
@@ -82,8 +83,22 @@ class AudioSampleHandler(AudioSampleStreamer):
         thread.start()
         log.debug(f"Started thread {name}")
 
+    def convert_audio_sample_to_string(self, filename):
+        try:
+            with open(filename, "rb") as audio_wav:
+                audio_bytes_data = audio_wav.read()
+
+            audio_b64_bytes = b64encode(audio_bytes_data)
+            return audio_b64_bytes.decode("utf-8")
+
+        except Exception as exception:
+            log.error(f"Unable to convert {filename} audio file to string format.")
+            return None
+
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
-    def snip_audio_sample(self, filename, seconds=45):
+    def snip_audio_sample(self, seconds=45):
+        filename = f"{application_data_dir}/audio/sample_{get_current_timestamp()}.wav"
         self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=seconds)
+        return filename

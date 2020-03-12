@@ -25,6 +25,6 @@ amixer cset numid=3 1
 
 export ARANYANI_HOME=/home/pi/aranyani
 
-mkdir -p $ARANYANI_HOME/data
+mkdir -p $ARANYANI_HOME/data/audio
 mkdir -p $ARANYANI_HOME/logs
 mkdir -p $ARANYANI_HOME/temp

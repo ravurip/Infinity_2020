@@ -6,7 +6,7 @@ try:
     while True:
         try:
             interrupt = int(input("Enter any int value"))
-            audio_handler.snip_audio_sample(f"sample_{interrupt}", interrupt)
+            audio_handler.snip_audio_sample(interrupt)
         except NameError as e:
             log.warning("Invalid value entered")
             continue
