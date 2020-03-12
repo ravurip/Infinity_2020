@@ -60,9 +60,6 @@ class AudioSampleStreamer:
         wf.writeframes(b''.join(frames))
         wf.close()
 
-    def detect_activity(self):
-        pass
-
 
 class AudioSampleHandler(AudioSampleStreamer):
 
@@ -83,7 +80,7 @@ class AudioSampleHandler(AudioSampleStreamer):
         thread.start()
         log.debug(f"Started thread {name}")
 
-    def convert_audio_sample_to_string(self, filename):
+    def convert_audio_sample_bytes_to_string(self, filename):
         try:
             with open(filename, "rb") as audio_wav:
                 audio_bytes_data = audio_wav.read()
@@ -98,7 +95,26 @@ class AudioSampleHandler(AudioSampleStreamer):
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
-    def snip_audio_sample(self, seconds=45):
+    def snip_audio_sample(self, into_future=30, total=45):
+        time.sleep(into_future)
         filename = f"{application_data_dir}/audio/sample_{get_current_timestamp()}.wav"
-        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=seconds)
+        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=total)
         return filename
+
+    def prepare_audio_snip_for_message(self, audio_sample_location: str):
+
+        message = {'filename': audio_sample_location.split("/")[-1]}
+
+        audio_data = self.convert_audio_sample_bytes_to_string(audio_sample_location)
+
+        if audio_data is not None:
+            message['audio_data'] = audio_data
+            message['audio_encoded'] = True
+        else:
+            message['audio_encoded'] = False
+
+        return message
+
+    def detect_activity(self, condition: bool = True):
+        if condition:
+            audio_snip_location = self.snip_audio_sample()

@@ -1,3 +1,4 @@
+import json
 import requests
 from base64 import b64encode
 
@@ -9,14 +10,31 @@ class Communicator:
 
     def __init__(self):
         self.rest_endpoint = rest_endpoint
-        log.info(f"Initialized Cloud communicator. All the Audio clips and communications will be made to {self.rest_endpoint}")
+        log.info(
+            f"Initialized Cloud communicator. All the Audio clips and communications will be made to {self.rest_endpoint}")
+
+    def __convert_python_dict_to_json(self, message):
+        return json.dumps(message)
 
     def __send_request(self, message):
-        return requests.post(self.rest_endpoint, json=message)
+        try:
+            json_message = self.__convert_python_dict_to_json(message)
+            return requests.post(self.rest_endpoint, json=json_message)
 
-    def push_audio_file(self, metadata, wavefile):
+        except Exception as exc:
+            log.error("Failed to send message to cloud")
+            return None
+
+    def push_audio_file(self, audio_data, metadata=None):
+        message = {}
+
+        message['metadata'] = {"hostname": "rasp"}
+        message['audio_particulars'] = audio_data
+
+        return self.__send_request(message)
+
+    def send_heart_beat(self):
         pass
-
 
 #     from base64 import b64encode, b64decode
 #     a = open("/home/pradeepr/IdeaProjects/Infinity_2020/raspberry_pi/sample_5.wav", "rb").read()

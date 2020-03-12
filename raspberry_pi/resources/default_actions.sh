@@ -4,7 +4,7 @@ sudo apt-get update
 sudo apt-get upgrade
 
 #Installing required alsa tools
-sudo apt-get install git
+#sudo apt-get install git
 sudo apt-get install libasound-dev
 sudo apt-get install alsa-tools alsa-utils
 
@@ -28,3 +28,5 @@ export ARANYANI_HOME=/home/pi/aranyani
 mkdir -p $ARANYANI_HOME/data/audio
 mkdir -p $ARANYANI_HOME/logs
 mkdir -p $ARANYANI_HOME/temp
+
+chmod -R 550 $ARANYANI_HOME
