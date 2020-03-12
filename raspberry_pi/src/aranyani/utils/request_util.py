@@ -20,7 +20,7 @@ class Communicator:
     def __send_request(self, message):
         try:
             json_message = self.__convert_python_dict_to_json(message)
-            return requests.post(self.rest_endpoint, json=json_message)
+            return requests.post(self.rest_endpoint, json=json_message, timeout=29000)
 
         except Exception as exc:
             log.error("Failed to send message to cloud")
