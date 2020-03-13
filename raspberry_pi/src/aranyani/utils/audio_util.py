@@ -58,7 +58,6 @@ class AudioSampleStreamer:
             wf.setsampwidth(self.audio_port.get_sample_size(self.FORMAT))
             wf.setframerate(self.RATE)
             wf.writeframes(b''.join(frames))
-            wf.close()
 
 
 class AudioSampleHandler(AudioSampleStreamer):
@@ -74,19 +73,24 @@ class AudioSampleHandler(AudioSampleStreamer):
             time.sleep(1)
         log.info("All threads terminated.")
 
-    def run_threads(self, target, name, daemon, **kwargs):
+    def run_threads(self, target, name, daemon, join_thread=False, **kwargs):
         thread = Thread(target=target, name=name, kwargs=kwargs, daemon=daemon)
         self.threads.append(thread)
         thread.start()
+        if join_thread:
+            thread.join()
         log.debug(f"Started thread {name}")
 
     def convert_audio_sample_bytes_to_string(self, filename):
         try:
             with open(filename, "rb") as audio_wav:
+                audio_wav.seek(0)
                 audio_bytes_data = audio_wav.read()
 
             audio_b64_bytes = b64encode(audio_bytes_data)
-            return True, audio_b64_bytes.decode("utf-8")
+            audio_str = audio_b64_bytes.decode("utf-8")
+            print(len(audio_str))  #TODO remove print
+            return True, audio_str
 
         except Exception as exception:
             log.error(f"Unable to convert {filename} audio file to string format.", exception)
@@ -95,10 +99,10 @@ class AudioSampleHandler(AudioSampleStreamer):
     def init_audio_stream_collection(self):
         self.run_threads(target=self.append_audio_stream_to_queue, name="audio_stream_reader", daemon=True)
 
-    def snip_audio_sample(self, into_future=30, total=45):
+    def snip_audio_sample(self, into_future=25, total=35):
         time.sleep(into_future)
         filename = f"{application_data_dir}/audio/sample_{get_current_timestamp()}.wav"
-        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, filename=filename, num_of_seconds=total)
+        self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, join_thread=True, filename=filename, num_of_seconds=total)
         return filename
 
     def prepare_audio_snip_for_message(self, audio_sample_location: str):
