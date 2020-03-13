@@ -103,11 +103,11 @@ class AudioSampleHandler(AudioSampleStreamer):
         time.sleep(into_future)
         filename = f"{application_data_dir}/audio/sample_{get_current_timestamp()}.wav"
         self.run_threads(target=self.write_audio_wave_file, name="audio_stream_stripper", daemon=False, join_thread=True, filename=filename, num_of_seconds=total)
-        return filename
+        return self.prepare_audio_snip_for_message(filename)
 
     def prepare_audio_snip_for_message(self, audio_sample_location: str):
 
-        message = {'filename': audio_sample_location.split("/")[-1]}
+        message = {'filename': audio_sample_location.split("/")[-1], 'local_file': audio_sample_location}
         message['audio_encoded'], message['audio_data'] = self.convert_audio_sample_bytes_to_string(audio_sample_location)
 
         return message
