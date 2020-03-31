@@ -1,32 +1,23 @@
 import json
-from base64 import b64decode
-import boto3
+from aranyani_listner import post_audio_to_s3
+
 
 def lambda_handler(event, context):
-    data = json.loads(event)
 
-    audio_data = data['audio_particulars']
-    metadata = data['metadata']
-    filename=audio_data['filename']
-
-    audio_encoded = audio_data['audio_encoded']
-
-    if audio_encoded:
-        audio_string_content = audio_data['audio_data']
-        audio_b64 = audio_string_content.encode("utf-8")
-        s3_filekey = f'infinity/aranyani/{filename}'
-
-        s3 = boto3.resource('s3')
-        object = s3.Object('gupthas-garage', s3_filekey)
-
-        audio_binary_data = b64decode(audio_b64)
-
-        object.put(Body=audio_binary_data)
-
-    # TODO implement
-    return {
-        'statusCode': 400,
-        'body': json.dumps('Hello from Lambda!'),
-        'stored': audio_encoded,
-        'audio_key': data
+    method_to_invoke = {
+        "audio": post_audio_to_s3
     }
+
+    try:
+        data = json.loads(event)
+
+        event_type = data['eventType']
+        event_data = data['data']
+        metadata = data['metadata']
+
+        operation_response = method_to_invoke[event_type](event_data, metadata)
+
+        return {'statusCode': 200, 'lambda_response': operation_response}
+
+    except Exception as exc:
+        return {'statusCode': 501, 'error': "Failed to resolve the eventType provided", 'errorDescription': str(exc)}

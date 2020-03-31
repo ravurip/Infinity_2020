@@ -2,7 +2,7 @@ import json
 import requests
 from base64 import b64encode
 
-from aranyani.config.config import rest_endpoint
+from aranyani.config.config import rest_endpoint, HOSTNAME
 from aranyani.config.logger import log
 
 from pprint import pprint
@@ -29,8 +29,9 @@ class Communicator:
     def push_audio_file(self, audio_data, metadata=None):
         message = {}
 
-        message['metadata'] = {"hostname": "rasp"}
-        message['audio_particulars'] = audio_data
+        message['eventType'] = 'audio'
+        message['metadata'] = {"hostname": HOSTNAME}
+        message['data'] = audio_data
 
         return self.__send_request(message)
 
